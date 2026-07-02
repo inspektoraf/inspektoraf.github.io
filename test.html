@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Техспецы — Шпаргалка</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f4f6f9;
+    color: #1f2937;
+    line-height: 1.5;
+    padding: 16px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  h1 {
+    font-size: 1.5rem;
+    color: #1e3a8a;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    color: #6b7280;
+    font-size: 0.85rem;
+  }
+  .search-wrap {
+    position: sticky;
+    top: 8px;
+    z-index: 10;
+    background: #f4f6f9;
+    padding: 8px 0 12px;
+  }
+  .search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  #search {
+    width: 100%;
+    padding: 12px 40px 12px 40px;
+    font-size: 1rem;
+    border: 2px solid #d1d5db;
+    border-radius: 10px;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  #search:focus { border-color: #2563eb; }
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    color: #9ca3af;
+    font-size: 1.1rem;
+    pointer-events: none;
+  }
+  .clear-btn {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: #9ca3af;
+    cursor: pointer;
+    display: none;
+  }
+  .clear-btn:hover { color: #374151; }
+  .counter {
+    text-align: center;
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-top: 6px;
+  }
+  .qa-list { display: flex; flex-direction: column; gap: 8px; }
+  .qa-item {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    overflow: hidden;
+    transition: box-shadow 0.15s;
+  }
+  .qa-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .question {
+    padding: 12px 14px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    font-weight: 500;
+    user-select: none;
+  }
+  .question:hover { background: #f9fafb; }
+  .q-text { flex: 1; }
+  .q-num {
+    color: #2563eb;
+    font-weight: 700;
+    margin-right: 6px;
+  }
+  .arrow {
+    color: #9ca3af;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+  }
+  .qa-item.open .arrow { transform: rotate(90deg); }
+  .answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease;
+    background: #eff6ff;
+    border-top: 1px solid transparent;
+  }
+  .qa-item.open .answer {
+    max-height: 500px;
+    border-top-color: #dbeafe;
+  }
+  .answer-inner {
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .a-text {
+    flex: 1;
+    color: #1e3a8a;
+    font-weight: 500;
+  }
+  .copy-btn {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .copy-btn:hover { background: #1d4ed8; }
+  .copy-btn.copied { background: #16a34a; }
+  mark {
+    background: #fde68a;
+    color: inherit;
+    padding: 0 2px;
+    border-radius: 3px;
+  }
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #9ca3af;
+  }
+  .hint {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    text-align: center;
+    margin-top: 8px;
+  }
+  kbd {
+    background: #e5e7eb;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-family: monospace;
+    border: 1px solid #d1d5db;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🛠 Техспецы — Шпаргалка</h1>
+  <div class="subtitle">Быстрый поиск ответов на тестовые вопросы</div>
+</header>
+
+<div class="search-wrap">
+  <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="search" placeholder="Введите вопрос или ключевое слово..." autocomplete="off">
+    <button class="clear-btn" id="clear" title="Очистить">✕</button>
+  </div>
+  <div class="counter" id="counter"></div>
+  <div class="hint">Нажмите <kbd>/</kbd> или <kbd>Ctrl</kbd>+<kbd>K</kbd> для поиска</div>
+</div>
+
+<div class="qa-list" id="qaList"></div>
+
+<script>
+const qaData = [
+  {q:"Что такое BIOS?", a:"Базовая система ввода-вывода"},
+  {q:"Что такое ЦПУ?", a:"Процессор"},
+  {q:"Чем отличается процесс хранения информации на внешних носителях от процесса хранения информации в оперативной памяти ПК?", a:"Внешний носитель информации может её хранить после отключения питания ПК"},
+  {q:"Какая из перечисленных аббревиатур не является файловой системой?", a:"BolSFS"},
+  {q:"VPN это?", a:"Название технологий, позволяющих обеспечить одно или несколько сетевых соединений поверх другой сети"},
+  {q:"Что из перечисленного ниже является операционной системой?", a:"Microsoft Windows"},
+  {q:"Какой из предложенных вариантов диапазона частот Wi-Fi (на основе стандарта IEEE 802.11) является верным?", a:"2.4 / 5 ГГц"},
+  {q:"Определите верный синтаксис проверки доступности хоста утилитой ping командной строки ОС Windows", a:"ping www.yandex.ru"},
+  {q:"Какое из представленных ниже устройств является устройством вывода информации?", a:"Монитор"},
+  {q:"Какая команда позволяет узнать MAC-адрес сетевой карты в командной строке ОС Windows?", a:"ipconfig /all"},
+  {q:"Какой формат архивированных файлов поддерживается ОС Windows 10 по умолчанию?", a:".zip"},
+  {q:"Что определяет маска подсети?", a:"Размер подсети"},
+  {q:"После загрузки ОС Windows разрешение дисплея 4K установилось в минимальном значении 800х600. Драйверы для какого устройства следует проверить в первую очередь?", a:"Драйверы видеоадаптера"},
+  {q:"Что такое HTML?", a:"Язык разметки гипертекста"},
+  {q:"Какое сетевое устройство обеспечивает маршрутизацию пакетов на основе IP-адресов в локальных и глобальных сетях?", a:"Маршрутизатор"},
+  {q:"Для чего используется безопасный режим в ОС Windows?", a:"Для диагностики и восстановления операционной системы"},
+  {q:"Какой инструмент позволяет определить, на каком сетевом узле происходит потеря пакетов при обращении к удалённому хосту?", a:"traceroute (tracert)"},
+  {q:"Какая служба на ПК под управлением ОС Windows отвечает за сервис печати?", a:"Spooler"},
+  {q:"Результатом выполнения какой команды в консоли ОС Windows является вывод таблицы маршрутизации?", a:"route print"},
+  {q:"Какая комбинация клавиш в ОС Windows позволяет выделить все элементы в документе или окне?", a:"Ctrl + A"},
+  {q:"Чтобы получить удалённый доступ к рабочему столу ОС Windows с использованием встроенных инструментов, необходимо:", a:"Включить на компьютере, к которому осуществляется доступ, флажок \"Разрешить удалённый доступ к этому компьютеру\" в свойствах системы"},
+  {q:"Какое действие выполняет клавиша PrtSc в ОС Windows?", a:"Делает снимок текущего состояния всех подключённых экранов"},
+  {q:"Какая из перечисленных программ является специализированным редактором для презентаций?", a:"Microsoft PowerPoint"},
+  {q:"Браузер это?", a:"Программное обеспечение для отображения содержания веб-страниц"},
+  {q:"Если файл имеет разрешение .zip, это значит следующее:", a:"Файл является архивом и может быть распакован только с помощью специальной программы-архиватора"},
+  {q:"Выберите, какое утверждение для устройств хранения данных верное?", a:"SSD - это твердотельный накопитель без подвижных частей. SSD работает быстрее HDD"},
+  {q:"Что такое DVI?", a:"Видеоинтерфейс"},
+  {q:"Какая из программ предназначена для работы с электронными таблицами?", a:"Microsoft Excel"},
+  {q:"Какой файловый формат используется для хранения изображений?", a:"*.jpeg"},
+  {q:"Какой протокол позволяет сетевым устройствам автоматически получать настройки сети?", a:"DHCP"},
+  {q:"Файлы с какими расширениями не являются исполняемыми?", a:".doc"},
+  {q:"Утилита MSConfig это:", a:"Инструмент для управления автозапускаемыми программами, драйверами и загрузкой ОС Windows"},
+  {q:"Что такое SSID Wi-Fi сети?", a:"Идентификатор беспроводной сети"},
+  {q:"При использовании интерпретатора командной строки CMD для перехода в родительский каталог необходимо выполнить команду:", a:"cd .."},
+  {q:"Что такое RAM?", a:"Оперативная память"},
+  {q:"Какая команда показывает MAC-адреса всех сетевых адаптеров?", a:"getmac"},
+  {q:"Какая из перечисленных команд проверяет целостность ОС Windows 10?", a:"sfc /scannow"},
+  {q:"Какой из перечисленных протоколов используется для удалённого администрирования различных сетевых устройств и программных серверов?", a:"telnet"},
+  {q:"Какова максимально допустимая длина линии связи, построенной на кабельной UTP cat. 5e в метрах (в соответствии со стандартом ANSI/TIA/EIA)?", a:"100"},
+  {q:"С какими параметрами утилита ipconfig командной строки CMD отображает полную конфигурацию TCP/IP для всех адаптеров устройства?", a:"ipconfig /all"},
+  {q:"Для чего используется команда nslookup в консоли управления ОС Windows?", a:"Для обращения к DNS опрашиваемого сервера"},
+  {q:"DNS это:", a:"Сетевая служба, устанавливающая однозначное соответствие между доменным (символьным) именем хоста сети и его IP-адресом и наоборот"},
+  {q:"Какой разрядностью обладают современные процессоры?", a:"32 и 64 бита"},
+  {q:"Какая клавиша переводит клавиатуру в режим печати букв в верхнем регистре?", a:"Caps Lock"},
+  {q:"Какими из приложенных действий можно закрыть программу в ОС Windows, которая не отвечает и не откликается на команды?", a:"Запустить диспетчер задач, найти программу и функцией «снять задачу» закрыть программу"},
+  {q:"Какие из предложенных действий позволят выполнить трассировку маршрута хоста?", a:"Из командной строки ОС Windows ввести команду tracert и адрес хоста"},
+  {q:"Что такое URL-адрес?", a:"Система унифицированных адресов электронных ресурсов"},
+  {q:"Какой из перечисленных вариантов может использоваться как маска подсети?", a:"255.255.255.0"},
+  {q:"Вам необходимо внести изменения в файл C:\\Windows\\System32\\drivers\\etc\\hosts. При попытке сохранить получаете сообщение \"Отказано в доступе\". Как внести изменения?", a:"Открыть файл в текстовом редакторе от имени администратора, отредактировать и сохранить"},
+  {q:"Какой из предложенных вариантов является основной оснасткой управления пользователями и компьютерами в типовом домене MS Windows?", a:"AD (ADUC)"},
+  {q:"Что из перечисленного является стандартом оперативной памяти?", a:"DDR"},
+  {q:"Какими действиями можно безопасно завершить работу на ПК?", a:"Командой «Выключение» в панели задач «Пуск»"},
+  {q:"Сколько бит в одном байте?", a:"8"},
+  {q:"Какая из перечисленных команд используется для редактирования реестра ОС Windows?", a:"regedit"},
+  {q:"ПК автоматически получил IP-адрес 169.254.0.32 в настройках сетевого подключения. Назовите причину, которая могла привести к этой проблеме:", a:"ПК подключен к сети, в которой не запущен DHCP-сервер"},
+  {q:"Какие типы разъемов используются для подключения звуковых устройств?", a:"Audio Jack, USB, SPDIF"},
+  {q:"Какой из перечисленных вариантов является интерпретатором командной строки ОС Windows?", a:"cmd"},
+  {q:"Какие из предложенных типов разъемов используются для подключения накопителя HDD?", a:"SATA, IDE"},
+  {q:"Каков порядок расположения жил в коннекторе 8p8c (RJ-45) по типу EIA-568B (прямой, тип-5)?", a:"Бело-оранжевый / Оранжевый / Бело-зеленый / Синий / Бело-синий / Зеленый / Бело-коричневый / Коричневый"}
+];
+
+const list = document.getElementById('qaList');
+const search = document.getElementById('search');
+const clearBtn = document.getElementById('clear');
+const counter = document.getElementById('counter');
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function highlight(text, term) {
+  const safe = escapeHtml(text);
+  if (!term) return safe;
+  const regex = new RegExp('(' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+  return safe.replace(regex, '<mark>$1</mark>');
+}
+
+function render(term = '') {
+  list.innerHTML = '';
+  const t = term.trim().toLowerCase();
+  let count = 0;
+
+  qaData.forEach((item, i) => {
+    if (t && !item.q.toLowerCase().includes(t) && !item.a.toLowerCase().includes(t)) return;
+    count++;
+    const div = document.createElement('div');
+    div.className = 'qa-item';
+    div.innerHTML = `
+      <div class="question">
+        <div class="q-text"><span class="q-num">${i+1}.</span>${highlight(item.q, t)}</div>
+        <span class="arrow">▶</span>
+      </div>
+      <div class="answer">
+        <div class="answer-inner">
+          <div class="a-text">${highlight(item.a, t)}</div>
+          <button class="copy-btn">📋 Копировать</button>
+        </div>
+      </div>
+    `;
+    const qEl = div.querySelector('.question');
+    const aEl = div.querySelector('.answer');
+    const copyBtn = div.querySelector('.copy-btn');
+
+    qEl.addEventListener('click', () => {
+      div.classList.toggle('open');
+    });
+    copyBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(item.a).then(() => {
+        copyBtn.textContent = '✓ Скопировано';
+        copyBtn.classList.add('copied');
+        setTimeout(() => {
+          copyBtn.textContent = '📋 Копировать';
+          copyBtn.classList.remove('copied');
+        }, 1500);
+      });
+    });
+    list.appendChild(div);
+  });
+
+  if (count === 0) {
+    list.innerHTML = '<div class="empty">Ничего не найдено 😕</div>';
+  }
+  counter.textContent = t
+    ? `Найдено: ${count} из ${qaData.length}`
+    : `Всего вопросов: ${qaData.length}`;
+}
+
+search.addEventListener('input', (e) => {
+  const v = e.target.value;
+  clearBtn.style.display = v ? 'block' : 'none';
+  render(v);
+});
+
+clearBtn.addEventListener('click', () => {
+  search.value = '';
+  clearBtn.style.display = 'none';
+  render();
+  search.focus();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === '/' && document.activeElement !== search) {
+    e.preventDefault();
+    search.focus();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    search.focus();
+    search.select();
+  }
+  if (e.key === 'Escape' && document.activeElement === search) {
+    search.blur();
+  }
+});
+
+render();
+</script>
+</body>
+</html>
